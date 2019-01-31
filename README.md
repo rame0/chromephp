@@ -4,7 +4,7 @@ ChromePhp is a PHP library for the Chrome Logger Google Chrome extension.
 This library allows you to log variables to the Chrome console.
 
 ## Requirements
-- PHP 5 or later
+- PHP 7 or later
 
 ## Installation
 1. Install the Chrome extension from: https://chrome.google.com/extensions/detail/noaneddfkdjfnfdakjjmocngnfkfehhd
@@ -17,6 +17,8 @@ This library allows you to log variables to the Chrome console.
     ChromePhp::log('Hello console!');
     ChromePhp::log($_SERVER);
     ChromePhp::warn('something went wrong!');
+    $ex = new Exception('Some Exception occured!')
+    ChromePhp::exception($ex);
     ```
 
 More information can be found here:
