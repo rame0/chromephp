@@ -1,5 +1,5 @@
 {
-  "name": "ccampbell/chromephp",
+  "name": "rame0/chromephp",
   "type": "library",
   "description": "Log variables to the Chrome console (via Chrome Logger Google Chrome extension).",
   "keywords": [
