@@ -1,6 +1,7 @@
 <?php
 /**
  * Copyright 2010-2013 Craig Campbell
+ * Copyright 2018-2019 Ramil Aliyakberov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +21,14 @@
  *
  * @package ChromePhp
  * @author Craig Campbell <iamcraigcampbell@gmail.com>
+ * @author Ramil Aliyakberov <r@me0.biz>
  */
 class ChromePhp
 {
     /**
      * @var string
      */
-    const VERSION = '4.1.0';
+    const VERSION = '4.1.2';
 
     /**
      * @var string
@@ -100,7 +102,7 @@ class ChromePhp
     /**
      * @var array
      */
-    protected $_backtraces = array();
+    protected $_backtrace = array();
 
     /**
      * @var bool
@@ -152,100 +154,156 @@ class ChromePhp
     /**
      * logs a variable to the console
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
+     * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
+     * @throws ReflectionException
      */
-    public static function log()
+    public static function log(...$args)
     {
-        $args = func_get_args();
-        return self::_log('', $args);
+
+        self::_log('', $args);
     }
 
     /**
      * logs a warning to the console
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
+     * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
+     * @throws ReflectionException
      */
-    public static function warn()
+    public static function warn(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::WARN, $args);
+        self::_log(self::WARN, $args);
     }
 
     /**
      * logs an error to the console
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
+     * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
+     * @throws ReflectionException
      */
-    public static function error()
+    public static function error(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::ERROR, $args);
+        self::_log(self::ERROR, $args);
     }
 
     /**
      * sends a group log
      *
-     * @param string value
+     * @param array $args
+     * @throws ReflectionException
      */
-    public static function group()
+    public static function group(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::GROUP, $args);
+        self::_log(self::GROUP, $args);
     }
 
     /**
      * sends an info log
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
+     * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
+     * @throws ReflectionException
      */
-    public static function info()
+    public static function info(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::INFO, $args);
+        self::_log(self::INFO, $args);
     }
 
     /**
      * sends a collapsed group log
      *
-     * @param string value
+     * @param array $args
+     * @throws ReflectionException
      */
-    public static function groupCollapsed()
+    public static function groupCollapsed(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::GROUP_COLLAPSED, $args);
+        self::_log(self::GROUP_COLLAPSED, $args);
     }
 
     /**
      * ends a group log
      *
-     * @param string value
+     * @param array $args
+     * @throws ReflectionException
      */
-    public static function groupEnd()
+    public static function groupEnd(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::GROUP_END, $args);
+        self::_log(self::GROUP_END, $args);
     }
 
     /**
      * sends a table log
      *
-     * @param string value
+     * @param array $args
+     * @throws ReflectionException
      */
-    public static function table()
+    public static function table(...$args)
     {
-        $args = func_get_args();
-        return self::_log(self::TABLE, $args);
+        self::_log(self::TABLE, $args);
+    }
+
+    /**
+     * Log Exception
+     * @param Throwable $exception Exception object
+     * @throws ReflectionException
+     */
+    public static function exception(\Throwable $exception)
+    {
+        self::group($exception->getFile() . ' : ' . $exception->getLine());
+        self::warn('Message: ' . $exception->getMessage());
+        self::log('PHP Stack trace:');
+        foreach ($exception->getTrace() as $key => $val) {
+            $line = '#' . $key . "\t";
+
+
+            $args = [];
+            if (!empty($val['args'])) {
+                foreach ($val['args'] as $arg) {
+                    $type = gettype($arg);
+
+                    switch ($type) {
+                        case"array":
+                            $args[] = "(array) [...]";
+                            break;
+                        case"object":
+                            $args[] = '(' . get_class($arg) . ') {...}';
+                            break;
+                        case"resource":
+                            $args[] = "(resource)";
+                            break;
+                        case"unknown type":
+                            $args[] = "*unknown type*";
+                            break;
+                        default:
+                            $args[] = "($type) $arg";
+                            break;
+                    }
+                }
+            }
+
+            $args = '(' . join(', ', $args) . ') ';
+
+            if (!empty($val['class'])) {
+                $line .= $val['class'] . $val['type'] . $val['function'] . $args;
+            } elseif (!empty($val['function'])) {
+                $line .= $val['function'] . $args;
+            }
+
+            $line .= $val['file'] . ':' . $val['line'];
+            self::log($line);
+        }
+        self::groupEnd();
     }
 
     /**
      * internal logging call
      *
      * @param string $type
+     * @param array $args
      * @return void
+     * @throws ReflectionException
      */
     protected static function _log($type, array $args)
     {
@@ -279,6 +337,7 @@ class ChromePhp
      *
      * @param Object
      * @return array
+     * @throws ReflectionException
      */
     protected function _convert($object)
     {
@@ -324,7 +383,7 @@ class ChromePhp
 
             try {
                 $value = $property->getValue($object);
-            } catch (ReflectionException $e) {
+            } /** @noinspection PhpRedundantCatchClauseInspection */ catch (ReflectionException $e) {
                 $value = 'only PHP 5.3 can access private/protected properties';
             }
 
@@ -349,27 +408,28 @@ class ChromePhp
         $static = $property->isStatic() ? ' static' : '';
         if ($property->isPublic()) {
             return 'public' . $static . ' ' . $property->getName();
-        }
-
-        if ($property->isProtected()) {
+        } elseif ($property->isProtected()) {
             return 'protected' . $static . ' ' . $property->getName();
-        }
-
-        if ($property->isPrivate()) {
+        } elseif ($property->isPrivate()) {
             return 'private' . $static . ' ' . $property->getName();
+        } else {
+            return $static . ' ' . $property->getName();
         }
     }
 
     /**
      * adds a value to the data array
      *
-     * @var mixed
+     *
+     * @param array $logs
+     * @param $backtrace
+     * @param $type
      * @return void
      */
     protected function _addRow(array $logs, $backtrace, $type)
     {
         // if this is logged on the same line for example in a loop, set it to null to save space
-        if (in_array($backtrace, $this->_backtraces)) {
+        if (in_array($backtrace, $this->_backtrace)) {
             $backtrace = null;
         }
 
@@ -380,7 +440,7 @@ class ChromePhp
         }
 
         if ($backtrace !== null) {
-            $this->_backtraces[] = $backtrace;
+            $this->_backtrace[] = $backtrace;
         }
 
         $row = array($logs, $backtrace, $type);

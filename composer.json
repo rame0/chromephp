@@ -1,24 +1,34 @@
 {
-    "name": "ccampbell/chromephp",
-    "type": "library",
-    "description": "Log variables to the Chrome console (via Chrome Logger Google Chrome extension).",
-    "keywords": ["log","logging"],
-    "homepage": "http://github.com/ccampbell/chromephp",
-    "license": "Apache-2.0",
-    "authors": [
-        {
-            "name": "Craig Campbell",
-            "email": "iamcraigcampbell@gmail.com",
-            "homepage": "http://craig.is",
-            "role": "Developer"
-        }
-    ],
-    "require": {
-        "php": ">=5.0.0"
+  "name": "ccampbell/chromephp",
+  "type": "library",
+  "description": "Log variables to the Chrome console (via Chrome Logger Google Chrome extension).",
+  "keywords": [
+    "log",
+    "logging"
+  ],
+  "homepage": "http://github.com/ccampbell/chromephp",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Craig Campbell",
+      "email": "iamcraigcampbell@gmail.com",
+      "homepage": "http://craig.is",
+      "role": "Developer"
     },
-    "autoload": {
-        "psr-0": {
-            "ChromePhp": ""
-        }
+    {
+      "name": "Ramil Aliyakberov a.k.a R@Me0",
+      "email": "r@me0.biz",
+      "homepage": "https://www.rame0.biz",
+      "role": "Developer"
     }
+  ],
+  "require": {
+    "php": ">=7.0.0",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-0": {
+      "ChromePhp": ""
+    }
+  }
 }
