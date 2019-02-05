@@ -156,7 +156,6 @@ class ChromePhp
      *
      * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
-     * @throws ReflectionException
      */
     public static function log(...$args)
     {
@@ -169,7 +168,6 @@ class ChromePhp
      *
      * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
-     * @throws ReflectionException
      */
     public static function warn(...$args)
     {
@@ -181,7 +179,6 @@ class ChromePhp
      *
      * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
-     * @throws ReflectionException
      */
     public static function error(...$args)
     {
@@ -192,7 +189,6 @@ class ChromePhp
      * sends a group log
      *
      * @param array $args
-     * @throws ReflectionException
      */
     public static function group(...$args)
     {
@@ -204,7 +200,6 @@ class ChromePhp
      *
      * @param array $args unlimited OPTIONAL number of additional logs [...]
      * @return void
-     * @throws ReflectionException
      */
     public static function info(...$args)
     {
@@ -215,7 +210,6 @@ class ChromePhp
      * sends a collapsed group log
      *
      * @param array $args
-     * @throws ReflectionException
      */
     public static function groupCollapsed(...$args)
     {
@@ -226,7 +220,6 @@ class ChromePhp
      * ends a group log
      *
      * @param array $args
-     * @throws ReflectionException
      */
     public static function groupEnd(...$args)
     {
@@ -237,7 +230,6 @@ class ChromePhp
      * sends a table log
      *
      * @param array $args
-     * @throws ReflectionException
      */
     public static function table(...$args)
     {
@@ -247,7 +239,6 @@ class ChromePhp
     /**
      * Log Exception
      * @param Throwable $exception Exception object
-     * @throws ReflectionException
      */
     public static function exception(\Throwable $exception)
     {
@@ -303,7 +294,6 @@ class ChromePhp
      * @param string $type
      * @param array $args
      * @return void
-     * @throws ReflectionException
      */
     protected static function _log($type, array $args)
     {
@@ -337,7 +327,6 @@ class ChromePhp
      *
      * @param Object
      * @return array
-     * @throws ReflectionException
      */
     protected function _convert($object)
     {
@@ -366,33 +355,37 @@ class ChromePhp
             $object_as_array[$key] = $this->_convert($value);
         }
 
-        $reflection = new ReflectionClass($object);
+        try {
+            $reflection = new ReflectionClass($object);
 
-        // loop through the properties and add those
-        foreach ($reflection->getProperties() as $property) {
+            // loop through the properties and add those
+            foreach ($reflection->getProperties() as $property) {
 
-            // if one of these properties was already added above then ignore it
-            if (array_key_exists($property->getName(), $object_vars)) {
-                continue;
+                // if one of these properties was already added above then ignore it
+                if (array_key_exists($property->getName(), $object_vars)) {
+                    continue;
+                }
+                $type = $this->_getPropertyKey($property);
+
+                if ($this->_php_version >= 5.3) {
+                    $property->setAccessible(true);
+                }
+
+                try {
+                    $value = $property->getValue($object);
+                } catch (ReflectionException $e) {
+                    $value = 'only PHP 5.3 can access private/protected properties';
+                }
+
+                // same instance as parent object
+                if ($value === $object || in_array($value, $this->_processed, true)) {
+                    $value = 'recursion - parent object [' . get_class($value) . ']';
+                }
+
+                $object_as_array[$type] = $this->_convert($value);
             }
-            $type = $this->_getPropertyKey($property);
+        } catch (\Throwable $ex) {
 
-            if ($this->_php_version >= 5.3) {
-                $property->setAccessible(true);
-            }
-
-            try {
-                $value = $property->getValue($object);
-            } /** @noinspection PhpRedundantCatchClauseInspection */ catch (ReflectionException $e) {
-                $value = 'only PHP 5.3 can access private/protected properties';
-            }
-
-            // same instance as parent object
-            if ($value === $object || in_array($value, $this->_processed, true)) {
-                $value = 'recursion - parent object [' . get_class($value) . ']';
-            }
-
-            $object_as_array[$type] = $this->_convert($value);
         }
         return $object_as_array;
     }
