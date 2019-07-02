@@ -240,7 +240,7 @@ class ChromePhp
      * Log Exception
      * @param Throwable $exception Exception object
      */
-    public static function exception(\Throwable $exception)
+    public static function exception(Throwable $exception)
     {
         self::group($exception->getFile() . ' : ' . $exception->getLine());
         self::warn('Message: ' . $exception->getMessage());
@@ -282,7 +282,9 @@ class ChromePhp
                 $line .= $val['function'] . $args;
             }
 
-            $line .= $val['file'] . ':' . $val['line'];
+            if (!empty($val['file'])) {
+                $line .= $val['file'] . ':' . $val['line'];
+            }
             self::log($line);
         }
         self::groupEnd();
@@ -384,7 +386,7 @@ class ChromePhp
 
                 $object_as_array[$type] = $this->_convert($value);
             }
-        } catch (\Throwable $ex) {
+        } catch (Throwable $ex) {
 
         }
         return $object_as_array;
